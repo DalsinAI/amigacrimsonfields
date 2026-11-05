@@ -35,6 +35,33 @@
 
 /* Functions to read/write gzip files */
 
+#if SDL_VERSION_ATLEAST(2,0,0)
+/* SDL 2's RWops callbacks (AmiCradle Team, 2026): 64-bit seeks, size_t
+   counts, a size callback; the same gzip calls as below. */
+static Sint64 gzip_size(SDL_RWops *context) {
+  (void)context;
+  return -1;
+}
+
+static Sint64 gzip_seek(SDL_RWops *context, Sint64 offset, int whence) {
+  long pos = gzseek((gzFile)context->hidden.unknown.data1, (long)offset, whence);
+  if (pos == -1) SDL_Error(SDL_EFSEEK);
+  return pos;
+}
+
+static size_t gzip_read(SDL_RWops *context, void *ptr, size_t size, size_t maxnum) {
+  int nread = gzread((gzFile)context->hidden.unknown.data1, ptr, (unsigned)(size * maxnum));
+  if (nread < 0) { SDL_Error(SDL_EFREAD); return 0; }
+  return size ? (size_t)nread / size : 0;
+}
+
+static size_t gzip_write(SDL_RWops *context, const void *ptr, size_t size, size_t num) {
+  int nwrote = gzwrite((gzFile)context->hidden.unknown.data1, ptr, (unsigned)(size * num));
+  if (nwrote <= 0) { SDL_Error(SDL_EFWRITE); return 0; }
+  return size ? (size_t)nwrote / size : 0;
+}
+#else
+
 static int gzip_seek(SDL_RWops *context, int offset, int whence) {
   int pos;
 
@@ -58,6 +85,8 @@ static int gzip_write(SDL_RWops *context, const void *ptr, int size, int num) {
   if (nwrote == 0) SDL_Error(SDL_EFWRITE);
   return nwrote;
 }
+
+#endif /* SDL 2 */
 
 static int gzip_close(SDL_RWops *context) {
   int rc = 0;
@@ -140,6 +169,9 @@ SDL_RWops *SDL_RWFromGzip(const char *file, const char *mode) {
       rwops->read = gzip_read;
       rwops->write = gzip_write;
       rwops->close = gzip_close;
+#if SDL_VERSION_ATLEAST(2,0,0)
+      rwops->size = gzip_size;
+#endif
     } else {
       SDL_FreeRW(rwops);
       rwops = NULL;

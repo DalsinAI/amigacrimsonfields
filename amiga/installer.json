@@ -1,0 +1,14 @@
+{
+  "name": "Crimson Fields",
+  "version": "0.5.3-amigaos3-test1",
+  "drawer": "CrimsonFields",
+  "program": "CrimsonFields",
+  "cpu": "68040",
+  "fpu": true,
+  "space": 6000000,
+  "modules": ["SDL2.module", "SDL2_mixer.module"],
+  "keep": ["User"],
+  "parent": "Work:Games",
+  "badge": "icons/art/crimson.png",
+  "script": "Install-CrimsonFields"
+}

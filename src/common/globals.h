@@ -53,7 +53,14 @@
 #define FILE_VERSION  13
 #define FID_MISSION   MakeID('M','S','S','N')  /* mission file identifier */
 
+#include "SDL_version.h"
+#if SDL_VERSION_ATLEAST(2,0,0)
+/* SDL 2 (sdlcompat.h): the window surface is 32-bit; surfaces of the same
+   depth blit without conversion */
+#define DISPLAY_BPP	32
+#else
 #define DISPLAY_BPP	16	/* display depth */
+#endif
 
 #define MIN_XRES	240
 #define MIN_YRES	240

@@ -77,7 +77,10 @@ void View::SetVideoMode( unsigned short w, unsigned short h, short bpp,
                          unsigned long flags ) {
   bool change = (s_surface != NULL);
 
+#if !SDL_VERSION_ATLEAST(2,0,0)
+  // (on SDL 2 the display is the window's own surface: SDL frees it)
   if ( change ) SDL_FreeSurface( s_surface );
+#endif
 
   s_surface = SDL_SetVideoMode( w, h, bpp, flags );
 
@@ -282,6 +285,9 @@ GUI_Status View::FetchEvent( SDL_Event &event ) {
 
   do {
     if ( SDL_WaitEvent( &event ) ) {
+#if SDL_VERSION_ATLEAST(2,0,0)
+      if ( !sdlcompat_translate( &event ) ) { rc = GUI_NONE; continue; }
+#endif
 
       // try to aggregate several mouse motion events to prevent getting flooded
       if ( event.type == SDL_MOUSEMOTION ) {
@@ -289,7 +295,11 @@ GUI_Status View::FetchEvent( SDL_Event &event ) {
         Uint32 start = SDL_GetTicks();
 
         do {
+#if SDL_VERSION_ATLEAST(2,0,0)
+          int got = SDL_PeepEvents( &next, 1, SDL_GETEVENT, SDL_MOUSEMOTION, SDL_MOUSEMOTION );
+#else
           int got = SDL_PeepEvents( &next, 1, SDL_GETEVENT, SDL_MOUSEMOTIONMASK );
+#endif
 
           if ( got > 0 ) {
             event.motion.x = next.motion.x;
@@ -327,6 +337,9 @@ GUI_Status View::PeekEvent( SDL_Event &event ) {
   GUI_Status rc = GUI_NONE;
 
   while ( (rc == GUI_NONE) && SDL_PollEvent( &event ) ) {
+#if SDL_VERSION_ATLEAST(2,0,0)
+    if ( !sdlcompat_translate( &event ) ) continue;
+#endif
     rc = SystemFilter( event );
 
     if ( rc != GUI_NONE ) {
@@ -347,7 +360,13 @@ GUI_Status View::PeekEvent( SDL_Event &event ) {
 ////////////////////////////////////////////////////////////////////////
 
 int View::ToggleFullScreen( void ) {
+#if SDL_VERSION_ATLEAST(2,0,0)
+  // SDL 2 makes a new window surface on the switch: take it, and redraw
+  SetVideoMode( w, h, ScreenBPP(), IsFullScreen() ? 0 : SDL_FULLSCREEN );
+  return s_surface == NULL;
+#else
   return !SDL_WM_ToggleFullScreen( s_surface );
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////

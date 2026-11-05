@@ -1362,11 +1362,20 @@ GUI_Status Game::HandleEvent( const SDL_Event &event ) {
   // check for keyboard commands
   if ( event.type == SDL_KEYDOWN ) {
     // some SDL ports return illegal key values
+#if SDL_VERSION_ATLEAST(2,0,0)
+    // SDL 2's key codes for keys without a character are above 0x40000000
+    int key = event.key.keysym.sym;
+    const SDLKey *keymap = CFOptions.GetKeyBindings();
+
+    // map user- and locale-defined keys to standard ones
+    if (key > 0) {
+#else
     short key = event.key.keysym.sym & 0x1ff;
     const SDLKey *keymap = CFOptions.GetKeyBindings();
 
     // map user- and locale-defined keys to standard ones
     if ((key > SDLK_FIRST) && (key < SDLK_LAST)) {
+#endif
       // KEYBIND_MINIMIZE is a global binding that is not specific
       // to the Game class, so it isn't handled here
 

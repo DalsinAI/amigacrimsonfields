@@ -52,7 +52,11 @@ public:
   GUI_Status PeekEvent( SDL_Event &event );
   void SetEventFilter( GUIEventFilter efilter ) { filter = efilter; }
   int ToggleFullScreen( void );
+#if SDL_VERSION_ATLEAST(2,0,0)
+  bool IsFullScreen( void ) const { return sdlcompat_fullscreen() != 0; }
+#else
   bool IsFullScreen( void ) const { return (s_surface->flags & SDL_FULLSCREEN) != 0; }
+#endif
   unsigned char ScreenBPP( void ) const { return s_surface->format->BitsPerPixel; }
 
   void SetSmallFont( Font *font ) { sfont = font; }

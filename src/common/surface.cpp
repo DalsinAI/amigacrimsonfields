@@ -74,7 +74,11 @@ int Surface::SetColorKey( const Color &col ) {
 
 Color Surface::GetColorKey( void ) const {
   Uint8 r, g, b;
+#if SDL_VERSION_ATLEAST(2,0,0)
+  SDL_GetRGB( sdlcompat_colorkey( s_surface ), s_surface->format, &r, &g, &b );
+#else
   SDL_GetRGB( s_surface->format->colorkey, s_surface->format, &r, &g, &b );
+#endif
   return Color( r, g, b );
 }
 
@@ -457,11 +461,24 @@ int Surface::LoadPalette( MemBuffer &file, unsigned short num ) {
 
   file.Read( pal, num * 3 );
 
+#if SDL_VERSION_ATLEAST(2,0,0)
+  // through SDL_SetPaletteColors, so SDL 2 sees the palette has changed
+  SDL_Color *cols = new SDL_Color[num];
+  for ( int i = 0; i < num; ++i ) {
+    cols[i].r = *col++;
+    cols[i].g = *col++;
+    cols[i].b = *col++;
+    cols[i].a = SDL_ALPHA_OPAQUE;
+  }
+  SDL_SetPaletteColors( s_surface->format->palette, cols, 0, num );
+  delete [] cols;
+#else
   for ( int i = 0; i < num; ++i ) {
     s_surface->format->palette->colors[i].r = *col++;
     s_surface->format->palette->colors[i].g = *col++;
     s_surface->format->palette->colors[i].b = *col++;
   }
+#endif
 
   delete [] pal;
   return 0;

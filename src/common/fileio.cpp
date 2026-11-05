@@ -333,6 +333,10 @@ int MemBuffer::WriteS( string value, int len /* = 0 */ ) {
 ////////////////////////////////////////////////////////////////////////
 
 void append_path_delim( string &path ) {
+#ifdef __amigaos__
+  // AmigaOS: "PROGDIR:" needs no "/" ("PROGDIR:/" is its parent)
+  if ( path.empty() || (path[path.length() - 1] == ':') ) return;
+#endif
   if ( path.at( path.length() - 1 ) != PATHDELIM ) path += PATHDELIM;
 }
 
@@ -355,6 +359,11 @@ void make_dir( const char *dir ) {
 # else
   CreateDirectory( dir, NULL );
 # endif
+#elif defined __amigaos__
+  // AmigaOS: no trailing "/" on the drawer's name
+  string d( dir );
+  while ( !d.empty() && (d[d.length() - 1] == '/') ) d.erase( d.length() - 1 );
+  mkdir( d.c_str(), S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH );
 #else
   mkdir( dir, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH );
 #endif
@@ -403,6 +412,8 @@ string get_home_dir( void ) {
 # endif
 #elif defined __BEOS__
   return "./";
+#elif defined __amigaos__
+  return "";          // no home: settings and saves in PROGDIR:User
 #else
   return getenv( "HOME" );
 #endif
@@ -418,6 +429,12 @@ string get_home_dir( void ) {
 string get_config_dir( void ) {
   string confd;
   string homed( get_home_dir() );
+
+#ifdef __amigaos__
+  // AmigaOS: crimsonrc and games/ in the program's User drawer
+  (void)homed;
+  return "PROGDIR:User/";
+#endif
 
 #ifdef WIN32
   if ( homed.empty() ) confd = get_data_dir();
@@ -470,6 +487,8 @@ string get_data_dir( void ) {
     *l = '\0';
   }
   return dir;
+#elif defined __amigaos__
+  return "PROGDIR:";  // the data is beside the program
 #elif defined CF_DATADIR
   return CF_DATADIR;
 #else

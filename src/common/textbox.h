@@ -141,7 +141,7 @@ public:
 
 private:
   GUI_Status InputLoop( void );
-  void CharInput( short sym, unsigned short unicode );
+  void CharInput( int sym, unsigned short unicode );
   unsigned short CursorWidth( void ) const;
   short CursorPos( void ) const;
   unsigned short DispWidth( short ch ) const;
