@@ -282,6 +282,9 @@ GUI_Status View::FetchEvent( SDL_Event &event ) {
 
   do {
     if ( SDL_WaitEvent( &event ) ) {
+#if SDL_VERSION_ATLEAST(2,0,0)
+      if ( !sdlcompat_translate( &event ) ) { rc = GUI_NONE; continue; }
+#endif
 
       // try to aggregate several mouse motion events to prevent getting flooded
       if ( event.type == SDL_MOUSEMOTION ) {
@@ -289,7 +292,11 @@ GUI_Status View::FetchEvent( SDL_Event &event ) {
         Uint32 start = SDL_GetTicks();
 
         do {
+#if SDL_VERSION_ATLEAST(2,0,0)
+          int got = SDL_PeepEvents( &next, 1, SDL_GETEVENT, SDL_MOUSEMOTION, SDL_MOUSEMOTION );
+#else
           int got = SDL_PeepEvents( &next, 1, SDL_GETEVENT, SDL_MOUSEMOTIONMASK );
+#endif
 
           if ( got > 0 ) {
             event.motion.x = next.motion.x;
@@ -327,6 +334,9 @@ GUI_Status View::PeekEvent( SDL_Event &event ) {
   GUI_Status rc = GUI_NONE;
 
   while ( (rc == GUI_NONE) && SDL_PollEvent( &event ) ) {
+#if SDL_VERSION_ATLEAST(2,0,0)
+    if ( !sdlcompat_translate( &event ) ) continue;
+#endif
     rc = SystemFilter( event );
 
     if ( rc != GUI_NONE ) {

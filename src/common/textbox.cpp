@@ -497,7 +497,11 @@ GUI_Status StringWidget::InputLoop( void ) {
                                           (event.key.keysym.sym == SDLK_TAB))) ) {
         quit = true;
       } else if ( event.type == SDL_KEYDOWN ) {
+#if SDL_VERSION_ATLEAST(2,0,0)
+        CharInput( event.key.keysym.sym, sdlcompat_unicode );
+#else
         CharInput( event.key.keysym.sym, event.key.keysym.unicode );
+#endif
       }
     }
   } while ( !quit );
@@ -518,7 +522,7 @@ GUI_Status StringWidget::InputLoop( void ) {
 // RETURNS    : -
 ////////////////////////////////////////////////////////////////////////
 
-void StringWidget::CharInput( short sym, unsigned short unicode ) {
+void StringWidget::CharInput( int sym, unsigned short unicode ) {
   bool changed = false;
 
   if ( unicode ) {
