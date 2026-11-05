@@ -65,8 +65,26 @@ static Uint32 display_format( void ) {
   }
 }
 
+// As 1.2's: the colour key and the alpha go with the picture. (SDL 2's
+// SDL_ConvertSurfaceFormat drops a 16-bit surface's colour key, so the
+// fog's see-through corners were drawn.)
 SDL_Surface *SDL_DisplayFormat( SDL_Surface *s ) {
-  return SDL_ConvertSurfaceFormat( s, display_format(), 0 );
+  Uint32 key;
+  bool keyed = SDL_HasColorKey( s ) && (SDL_GetColorKey( s, &key ) == 0);
+  Uint8 kr = 0, kg = 0, kb = 0;
+  if ( keyed ) SDL_GetRGB( key, s->format, &kr, &kg, &kb );
+
+  SDL_Surface *n = SDL_ConvertSurfaceFormat( s, display_format(), 0 );
+  if ( !n ) return NULL;
+
+  if ( keyed ) SDL_SetColorKey( n, SDL_TRUE, SDL_MapRGB( n->format, kr, kg, kb ) );
+  Uint8 alpha = SDL_ALPHA_OPAQUE;
+  SDL_BlendMode mode = SDL_BLENDMODE_NONE;
+  SDL_GetSurfaceAlphaMod( s, &alpha );
+  SDL_GetSurfaceBlendMode( s, &mode );
+  SDL_SetSurfaceAlphaMod( n, alpha );
+  SDL_SetSurfaceBlendMode( n, mode );
+  return n;
 }
 
 int SDL_SetAlpha( SDL_Surface *s, Uint32 flags, Uint8 alpha ) {
