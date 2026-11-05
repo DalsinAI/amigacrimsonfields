@@ -1,0 +1,32 @@
+Crimson Fields for AmigaOS 3.x: what is in the package, and under which terms
+===========================================================================
+
+The program
+-----------
+Crimson Fields 0.5.3 (Jens Granseuer and the others in THANKS,
+http://crimson.seul.org) is free software under the GNU General Public
+License, version 2 or later (COPYING.txt).
+
+The port's own files (amiga/, src/common/sdlcompat.h and sdlcompat.cpp,
+and the changes for SDL 2 and AmigaOS in src/) are by the AmiCradle Team,
+under the GPL 2 or later like the game.
+
+Built into the program:
+- zlib 1.3.1 (Jean-loup Gailly and Mark Adler): the zlib licence.
+- GFOpenGPU's SDL 2, SDL2_ttf (with FreeType: the FreeType Project
+  licence) and SDL2_mixer: the zlib licence.
+
+The data in the drawer
+----------------------
+All of it is Crimson Fields' own and comes with the game's source:
+- cf.dat, default.tiles, default.units, title.bmp (the graphics, built
+  from gfx/ by upstream's tools), levels/ (the maps, built from levels/),
+  locale/ (the texts, built from locale/), sound/ (the effects, from
+  sfx/): under the GPL, version 2 or later, as the game.
+- music/default.mid, "Default Symphony", (c) 2004 Dave Fancella: under
+  the GPL as distributed with the game, or, separated from it, Creative
+  Commons Attribution-ShareAlike 1.0 (music/COPYING.MUSIC).
+- Bepa-Roman.ttf: Danilo Segan's Bepa, from Bitstream Vera, (c) 2003
+  Bitstream, Inc., Cyrillic glyphs (c) 2003, 2004 Danilo Segan: the
+  Bitstream Vera Fonts licence (free to use and pass on, with its notice,
+  which is in the font file itself).
