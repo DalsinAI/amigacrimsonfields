@@ -1,0 +1,121 @@
+# Crimson Fields for AmigaOS 3.x, 68040/68060 + FPU, on GFOpenGPU's SDL 2
+# (with SDL2_ttf and SDL2_mixer).
+#
+#   make -f amiga/Makefile.amigaos -j4 dist STOVE=/path/to/os32-gcc16-open6
+#
+# STOVE is the GFOpenAmigaGCC 16.2.0-open6 stove (prefix/ holds the
+# compiler, prefix/m68k-amigaos/ the GFOpenGPU 0.8 kit: libSDL2.a,
+# libSDL2_ttf.a with FreeType built in, libSDL2_mixer.a). Crimson Fields
+# 0.5.3 is an SDL 1.2 program; src/common/sdlcompat.h (given with -include)
+# maps the 1.2 calls it makes onto SDL 2. zlib is built static first by
+# amiga/deps/build-deps.sh. The data files (cf.dat, the tile and unit sets,
+# the levels and the language files) are made on the build machine by
+# upstream's tools, built for it by amiga/build-data.sh (host g++,
+# sdl2-config, zlib).
+#
+# Output: build/amigaos/crimson; 'dist' makes dist/CrimsonFields/ (the
+# program, its data, the ReadMe and the licences, with GlowIcons),
+# dist/CrimsonFields.info and dist/Install-CrimsonFields.
+
+STOVE   ?= $(HOME)/AmiCradle/stoves/os32-gcc16-open6
+PREFIX  = $(STOVE)/prefix
+KIT     = $(PREFIX)/m68k-amigaos
+CC      = $(PREFIX)/bin/m68k-amigaos-gcc
+CXX     = $(PREFIX)/bin/m68k-amigaos-g++
+CPU     ?= -m68040 -m68881
+# -fno-tree-loop-distribute-patterns: GCC 16's loop miscompile.
+OPT     ?= -O2 -fomit-frame-pointer -fno-tree-loop-distribute-patterns
+
+BUILD   = build/amigaos
+OBJDIR  = $(BUILD)/obj
+DEPS    = $(BUILD)/deps
+HOSTDATA = build/hostdata
+PROG    = crimson
+DIST    = dist
+OUT     = $(DIST)/CrimsonFields
+VERSION = 0.5.3
+
+DEFS    = -D__amigaos__ -DVERSION=\"$(VERSION)\" -DHAVE_LIBZ -DHAVE_DIRENT_H \
+          -DHAVE_UNISTD_H -DHAVE_STRCASECMP -DHAVE_STRNCASECMP -DDISABLE_NETWORK
+INC     = -include src/common/sdlcompat.h -Isrc/cf -Isrc/common \
+          -I$(KIT)/include/SDL2 -I$(DEPS)/include
+CFLAGS  = -noixemul $(OPT) $(CPU) $(DEFS) $(INC) -MMD -MP
+CXXFLAGS = $(CFLAGS) -std=gnu++98
+LDFLAGS = -noixemul $(CPU) -Wl,-Map,$(BUILD)/$(PROG).map
+LIBS    = -L$(DEPS)/lib -L$(KIT)/lib -lSDL2_ttf -lSDL2_mixer -lSDL2 -lz -lm -lpthread
+
+# Upstream's src/cf/Makefile.am list, and the SDL 2 layer.
+CF_SRC  = ai building combat container event game history initwindow main map \
+          mapwindow mission network options path platform player unit unitwindow
+COMMON_SRC = button extwindow fileio filewindow font gamewindow hexsup lang \
+          list listselect lset mapview mapwidget misc rect slider sound strutil \
+          surface textbox view widget window sdlcompat
+OBJS    = $(CF_SRC:%=$(OBJDIR)/cf/%.o) $(COMMON_SRC:%=$(OBJDIR)/common/%.o) \
+          $(OBJDIR)/common/SDL_zlib.o $(OBJDIR)/amiga/stack.o
+
+ICONS   = amiga/icons/CrimsonFields.info amiga/icons/ReadMe.info \
+          amiga/icons/Data.info amiga/icons/CrimsonFields-drawer.info \
+          amiga/Install-CrimsonFields amiga/Install-CrimsonFields.info
+
+all: $(BUILD)/$(PROG)
+
+$(DEPS)/lib/libz.a:
+	sh amiga/deps/build-deps.sh $(PREFIX) $(DEPS)
+
+$(HOSTDATA)/cf.dat:
+	sh amiga/build-data.sh $(HOSTDATA)
+
+$(BUILD)/$(PROG): $(OBJS)
+	$(CXX) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+
+$(OBJS): | $(DEPS)/lib/libz.a
+
+$(OBJDIR)/cf/%.o: src/cf/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+$(OBJDIR)/common/%.o: src/common/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+$(OBJDIR)/common/%.o: src/common/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(OBJDIR)/amiga/%.o: amiga/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -Wall -c -o $@ $<
+
+# The drawer: the program; cf.dat, default.tiles, default.units, the font
+# and title picture; levels/, locale/, sound/ (upstream's sfx/) and
+# music/; User/ for the settings and saved games.
+dist: $(BUILD)/$(PROG) $(HOSTDATA)/cf.dat $(ICONS) AMIGA_PORT.md COPYING amiga/Licences.txt
+	rm -rf $(OUT) && mkdir -p $(OUT)/User/games $(OUT)/levels $(OUT)/locale $(OUT)/sound $(OUT)/music
+	cp $(BUILD)/$(PROG) $(OUT)/CrimsonFields
+	cp $(HOSTDATA)/cf.dat $(HOSTDATA)/default.tiles $(HOSTDATA)/default.units $(OUT)/
+	cp gfx/Bepa-Roman.ttf gfx/title.bmp $(OUT)/
+	cp $(HOSTDATA)/levels/*.lev $(OUT)/levels/
+	cp $(HOSTDATA)/locale/*.dat $(OUT)/locale/
+	cp sfx/*.wav $(OUT)/sound/
+	cp music/default.mid music/COPYING.MUSIC $(OUT)/music/
+	cp AMIGA_PORT.md $(OUT)/ReadMe
+	cp README $(OUT)/ReadMe-crimson
+	cp COPYING $(OUT)/COPYING.txt
+	cp amiga/Licences.txt $(OUT)/Licences.txt
+	cp amiga/icons/CrimsonFields.info amiga/icons/ReadMe.info $(OUT)/
+	for f in ReadMe-crimson COPYING.txt Licences.txt; do cp amiga/icons/ReadMe.info $(OUT)/$$f.info; done
+	for d in levels locale sound music User; do cp amiga/icons/Data.info $(OUT)/$$d.info; done
+	cp amiga/icons/CrimsonFields-drawer.info $(DIST)/CrimsonFields.info
+	cp amiga/Install-CrimsonFields amiga/Install-CrimsonFields.info $(DIST)/
+
+objs: $(OBJS)
+
+-include $(OBJS:.o=.d)
+
+clean:
+	rm -rf $(OBJDIR) $(BUILD)/$(PROG) $(BUILD)/$(PROG).map
+
+distclean:
+	rm -rf build $(DIST)
+
+.PHONY: all dist objs clean distclean
