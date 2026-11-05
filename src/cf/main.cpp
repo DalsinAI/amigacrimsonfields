@@ -500,6 +500,11 @@ static GUI_Status event_filter( SDL_Event &event, Window *window ) {
   if ( event.type == SDL_KEYDOWN ) {
     rc = GUI_NONE;
 
+#ifdef __amigaos__
+    // Right Amiga+Q quits, as the other Amiga ports do (settings saved)
+    if ( (event.key.keysym.sym == SDLK_q) && (event.key.keysym.mod & KMOD_GUI) )
+      do_exit();
+#endif
     switch ( event.key.keysym.sym ) {
     case SDLK_F11:            // toggle sound
       Audio::ToggleSfxState();
