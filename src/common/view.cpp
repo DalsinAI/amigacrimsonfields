@@ -77,7 +77,10 @@ void View::SetVideoMode( unsigned short w, unsigned short h, short bpp,
                          unsigned long flags ) {
   bool change = (s_surface != NULL);
 
+#if !SDL_VERSION_ATLEAST(2,0,0)
+  // (on SDL 2 the display is the window's own surface: SDL frees it)
   if ( change ) SDL_FreeSurface( s_surface );
+#endif
 
   s_surface = SDL_SetVideoMode( w, h, bpp, flags );
 
@@ -357,7 +360,13 @@ GUI_Status View::PeekEvent( SDL_Event &event ) {
 ////////////////////////////////////////////////////////////////////////
 
 int View::ToggleFullScreen( void ) {
+#if SDL_VERSION_ATLEAST(2,0,0)
+  // SDL 2 makes a new window surface on the switch: take it, and redraw
+  SetVideoMode( w, h, ScreenBPP(), IsFullScreen() ? 0 : SDL_FULLSCREEN );
+  return s_surface == NULL;
+#else
   return !SDL_WM_ToggleFullScreen( s_surface );
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////
