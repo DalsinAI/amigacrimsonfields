@@ -9,6 +9,6 @@
   "modules": ["SDL2.module", "SDL2_mixer.module"],
   "keep": ["User"],
   "parent": "Work:Games",
-  "badge": "icons/art/crimson.png",
+  "badge": "icons/art/crimsonfields.png",
   "script": "Install-CrimsonFields"
 }
