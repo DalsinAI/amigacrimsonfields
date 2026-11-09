@@ -104,7 +104,7 @@ dist: $(BUILD)/$(PROG) $(HOSTDATA)/cf.dat $(ICONS) AMIGA_PORT.md COPYING amiga/L
 	cp amiga/Licences.txt $(OUT)/Licences.txt
 	cp amiga/icons/CrimsonFields.info amiga/icons/ReadMe.info $(OUT)/
 	for f in ReadMe-crimson COPYING.txt Licences.txt; do cp amiga/icons/ReadMe.info $(OUT)/$$f.info; done
-	for d in levels locale sound music User; do cp amiga/icons/Data.info $(OUT)/$$d.info; done
+	for d in User; do cp amiga/icons/Data.info $(OUT)/$$d.info; done
 	cp amiga/icons/CrimsonFields-drawer.info $(DIST)/CrimsonFields.info
 	cp amiga/Install-CrimsonFields amiga/Install-CrimsonFields.info $(DIST)/
 
